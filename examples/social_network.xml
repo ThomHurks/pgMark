@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<pgmark>
+    <types>
+        <type name="person">
+            <count>
+                <proportion>
+                    0.9
+                </proportion>
+            </count>
+            <relations>
+                <relation predicate="knows" target="person" allow_loops="false">
+                    <inDistribution>
+                        <zipfianDistribution exponent="2.5"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <zipfianDistribution exponent="2.5"/>
+                    </outDistribution>
+                    <affinities>
+                        <attributeAffinity name="gender" inverse="true" weight="1"/>
+                    </affinities>
+                </relation>
+                <relation predicate="works_at" target="business" allow_parallel_edges="true">
+                    <inDistribution>
+                        <zipfianDistribution exponent="2.5"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="1" stdev="1"/>
+                    </outDistribution>
+                </relation>
+            </relations>
+            <attributes>
+                <attribute name="email" unique="true" required="true">
+                    <regex>[a-z0-9][a-z0-9][a-z0-9_-][a-z0-9][a-z0-9]@(gmail|hotmail|live|outlook|yahoo)\.com</regex>
+                </attribute>
+                <attribute name="gender" unique="false" required="true">
+                    <categorical>
+                        <category probability="0.5">male</category>
+                        <category probability="0.5">female</category>
+                    </categorical>
+                </attribute>
+                <attribute name="age" unique="false" required="true">
+                    <numeric min="0" max="122">
+                        <gaussianDistribution mean="43" stdev="15"/>
+                    </numeric>
+                </attribute>
+                <attribute name="income" unique="false" required="true">
+                    <numeric>
+                        <exponentialDistribution scale="26000"/>
+                    </numeric>
+                </attribute>
+            </attributes>
+        </type>
+        <type name="business">
+            <count>
+                <proportion>
+                    0.1
+                </proportion>
+            </count>
+            <attributes>
+                <attribute name="name" unique="true" required="true">
+                    <regex>\w+</regex>
+                </attribute>
+            </attributes>
+        </type>
+    </types>
+    <predicates>
+        <predicate name="knows">
+        </predicate>
+        <predicate name="works_at">
+        </predicate>
+    </predicates>
+</pgmark>
