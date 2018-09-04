@@ -3,7 +3,7 @@
 
 #include "pugixml.hpp"
 #include "relation_distribution.h"
-#include "degree_distribution.h"
+#include "random_distribution.h"
 #include "attribute.h"
 #include "affinity.h"
 #include <set>
@@ -34,8 +34,9 @@ private:
                                                               const std::set<std::string> &a_PredicateNames,
                                                               const std::map<std::string, int> &a_Constraints);
 
-    static std::unique_ptr<DegreeDistribution> getDistribution(const pugi::xml_node a_DistributionNode,
-                                                               const int a_NrOfNodes);
+    static std::unique_ptr<RandomDistribution> getDistribution(const pugi::xml_node a_DistributionNode,
+                                                               const int a_NrOfNodes,
+                                                               const bool a_IntegerPrecision);
 
     static std::map<std::string, Affinity> getAffinities(const pugi::xml_node a_AffinitiesNode);
 

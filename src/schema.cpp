@@ -116,8 +116,9 @@ std::vector<RelationDistribution> Schema::getDistributions(const pugi::xml_node 
             int nr_source_nodes = a_Constraints.at(source);
             int nr_target_nodes = a_Constraints.at(target);
             distributions.emplace_back(source, target, predicate, allow_loops, allow_parallel_edges,
-                                       getDistribution(relation.child("inDistribution"), nr_target_nodes),
-                                       getDistribution(relation.child("outDistribution"), nr_source_nodes), affinities);
+                                       getDistribution(relation.child("inDistribution"), nr_target_nodes, true),
+                                       getDistribution(relation.child("outDistribution"), nr_source_nodes, true),
+                                       affinities);
         }
     }
     return distributions;
@@ -146,16 +147,30 @@ std::map<std::string, Affinity> Schema::getAffinities(const pugi::xml_node a_Aff
     return affinities;
 }
 
-std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node a_DistributionNode,
-                                                            const int a_NrOfNodes) {
+std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node a_DistributionNode,
+                                                            const int a_NrOfNodes,
+                                                            const bool a_IntegerPrecision) {
     pugi::xml_node distribution = a_DistributionNode.child("uniformDistribution");
     if (distribution) {
-        double min = distribution.attribute("min").as_double();
-        double max = distribution.attribute("max").as_double();
-        if (min > max) {
-            throw std::invalid_argument("Invalid uniform distribution; min > max");
+        // When generating node degrees with the uniform distribution, it only makes sense that the min and max
+        // parameters are integers. In that specific case we can use a uniform distribution that generates integers.
+        // We cannot use that trick for other distributions like the Gaussian distribution because even for node
+        // degrees the mean may be a floating point number.
+        if (a_IntegerPrecision) {
+            int min = distribution.attribute("min").as_int();
+            int max = distribution.attribute("max").as_int();
+            if (min > max) {
+                throw std::invalid_argument("Invalid uniform distribution; min > max");
+            }
+            return std::make_unique<UniformIntegerDistribution>(min, max);
+        } else {
+            double min = distribution.attribute("min").as_double();
+            double max = distribution.attribute("max").as_double();
+            if (min > max) {
+                throw std::invalid_argument("Invalid uniform distribution; min > max");
+            }
+            return std::make_unique<UniformDoubleDistribution>(min, max);
         }
-        return std::make_unique<UniformDegreeDistribution>(min, max);
     }
     distribution = a_DistributionNode.child("gaussianDistribution");
     if (distribution) {
@@ -164,7 +179,7 @@ std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node
         if (stdev <= 0.0 || stdev <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Standard deviation must be strictly larger than 0");
         }
-        return std::make_unique<GaussianDegreeDistribution>(mean, stdev);
+        return std::make_unique<GaussianDistribution>(mean, stdev);
     }
     distribution = a_DistributionNode.child("zipfianDistribution");
     if (distribution) {
@@ -172,7 +187,7 @@ std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node
         if (exponent < 0.0) {
             throw std::invalid_argument("Exponent must be larger than or equal to 0");
         }
-        return std::make_unique<ZipfianDegreeDistribution>(exponent, a_NrOfNodes);
+        return std::make_unique<ZipfianDistribution>(exponent, a_NrOfNodes);
     }
     // TODO(thom): check the Zeta parameters parsing.
     distribution = a_DistributionNode.child("zetaDistribution");
@@ -181,7 +196,7 @@ std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node
         if (alpha < 1.0 || (alpha - 1.0) <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Alpha must be strictly larger than 1");
         }
-        return std::make_unique<ZetaDegreeDistribution>(alpha);
+        return std::make_unique<ZetaDistribution>(alpha);
     }
     distribution = a_DistributionNode.child("exponentialDistribution");
     if (distribution) {
@@ -189,7 +204,7 @@ std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node
         if (scale <= 0.0 || scale <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Scale must be strictly larger than 0");
         }
-        return std::make_unique<ExponentialDegreeDistribution>(scale);
+        return std::make_unique<ExponentialDistribution>(scale);
     }
     distribution = a_DistributionNode.child("lognormalDistribution");
     if (distribution) {
@@ -198,7 +213,7 @@ std::unique_ptr<DegreeDistribution> Schema::getDistribution(const pugi::xml_node
         if (stdev <= 0.0 || stdev <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Standard deviation must be strictly larger than 0");
         }
-        return std::make_unique<LogNormalDegreeDistribution>(mean, stdev);
+        return std::make_unique<LogNormalDistribution>(mean, stdev);
     }
     throw std::invalid_argument("Distribution must be uniform, gaussian, zipfian, zeta, exponential or lognormal");
 }
@@ -219,10 +234,14 @@ std::vector<std::unique_ptr<Attribute>> Schema::getAttributes(const pugi::xml_no
             if (min > max) {
                 throw std::invalid_argument("Invalid min and max attributes for numeric element");
             }
+            double precision = attribute.attribute("precision").as_int(0);
+            if (precision < 0) {
+                throw std::invalid_argument("Invalid precision attribute for numeric element");
+            }
             // TODO(thom): Number argument for Zipfian should be configurable.
             int number = 1000;
-            attributes.push_back(std::make_unique<NumericAttribute>(name, required, unique, min, max,
-                                                                    getDistribution(numeric_kind, number)));
+            attributes.push_back(std::make_unique<NumericAttribute>(name, required, unique, min, max, precision,
+                                                                    getDistribution(numeric_kind, number, false)));
             continue;
         }
         pugi::xml_node categorical_kind = attribute.child("categorical");

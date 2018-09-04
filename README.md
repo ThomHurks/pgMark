@@ -36,5 +36,6 @@ and/or
 ```commandline
 ./pgMark examples/social_network.xml 1000
 ./pgMark examples/social_network.xml 10000 --output=graph.csv
+./pgMark examples/social_network.xml 1000 | csplit - /\#\#\#/
 ./pgMark --help
 ```

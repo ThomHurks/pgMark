@@ -38,12 +38,12 @@
                         <category probability="0.5">female</category>
                     </categorical>
                 </attribute>
-                <attribute name="age" unique="false" required="true">
+                <attribute name="age" unique="false" required="true" min="0" max="100">
                     <numeric min="0" max="122">
                         <gaussianDistribution mean="43" stdev="15"/>
                     </numeric>
                 </attribute>
-                <attribute name="income" unique="false" required="true">
+                <attribute name="income" unique="false" required="true" min="0" max="50000000">
                     <numeric>
                         <exponentialDistribution scale="26000"/>
                     </numeric>

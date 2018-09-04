@@ -1,9 +1,9 @@
-#ifndef GMARK_RELATIONDISTRIBUTION_H
-#define GMARK_RELATIONDISTRIBUTION_H
+#ifndef GMARK_RELATION_DISTRIBUTION_H
+#define GMARK_RELATION_DISTRIBUTION_H
 
 #include <map>
 #include <memory>
-#include "degree_distribution.h"
+#include "random_distribution.h"
 #include "affinity.h"
 
 class RelationDistribution {
@@ -13,14 +13,14 @@ private:
     std::string m_Predicate;
     bool m_AllowLoops;
     bool m_AllowParallelEdges;
-    std::unique_ptr<DegreeDistribution> m_InDistribution;
-    std::unique_ptr<DegreeDistribution> m_OutDistribution;
+    std::unique_ptr<RandomDistribution> m_InDistribution;
+    std::unique_ptr<RandomDistribution> m_OutDistribution;
     std::map<std::string, Affinity> m_Affinities;
 public:
     RelationDistribution(std::string a_Source, std::string a_Target, std::string a_Predicate, bool a_AllowLoops,
                          bool a_AllowParallelEdges,
-                         std::unique_ptr<DegreeDistribution> a_InDistribution,
-                         std::unique_ptr<DegreeDistribution> a_OutDistribution,
+                         std::unique_ptr<RandomDistribution> a_InDistribution,
+                         std::unique_ptr<RandomDistribution> a_OutDistribution,
                          std::map<std::string, Affinity> a_Affinities)
             : m_Source(a_Source),
               m_Target(a_Target),
@@ -64,13 +64,13 @@ public:
         return m_AllowParallelEdges;
     }
 
-    DegreeDistribution *getInDistribution() const {
+    RandomDistribution *getInDistribution() const {
         return m_InDistribution.get();
     }
 
-    DegreeDistribution *getOutDistribution() const {
+    RandomDistribution *getOutDistribution() const {
         return m_OutDistribution.get();
     }
 };
 
-#endif //GMARK_RELATIONDISTRIBUTION_H
+#endif //GMARK_RELATION_DISTRIBUTION_H

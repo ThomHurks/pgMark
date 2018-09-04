@@ -34,13 +34,17 @@ public:
         return m_Schema->getPredicates();
     }
 
-    const std::vector<std::string> getTypes() const {
+    const std::vector<std::string> getTypeNames() const {
         std::vector<std::string> types;
         types.reserve(m_Schema->getTypes().size());
         for (const auto &type_attribute_pair : m_Schema->getTypes()) {
             types.push_back(type_attribute_pair.first);
         }
         return types;
+    }
+
+    const std::vector<std::unique_ptr<Attribute>>& getTypeAttributes(const std::string &a_TypeName) const {
+        return m_Schema->getTypes().at(a_TypeName);
     }
 
     const std::map<std::string, int> &getConstraints() const {

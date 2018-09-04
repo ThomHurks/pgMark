@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<pgmark>
+    <types>
+        <type name="protein">
+            <count>
+                <proportion>
+                    0.31
+                </proportion>
+            </count>
+            <relations>
+                <relation predicate="interacts_with" target="protein" allow_loops="false">
+                    <inDistribution>
+                        <gaussianDistribution mean="0.187" stdev="0.4321"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="0.11" stdev="1.68"/>
+                    </outDistribution>
+                </relation>
+                <relation predicate="encoded_on" target="gene">
+                    <inDistribution>
+                        <zipfianDistribution exponent="3.31"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="1.95" stdev="0.99"/>
+                    </outDistribution>
+                </relation>
+                <relation predicate="occurs_in" target="organism">
+                    <inDistribution>
+                        <zipfianDistribution exponent="1.62"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <uniformDistribution min="1" max="1"/>
+                    </outDistribution>
+                </relation>
+                <relation predicate="referenced_by" target="article">
+                    <inDistribution>
+                        <zipfianDistribution exponent="2.53"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="1.68" stdev="2.97"/>
+                    </outDistribution>
+                </relation>
+                <relation predicate="has_keyword" target="keyword">
+                    <inDistribution>
+                        <zipfianDistribution exponent="0.20"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="7.13" stdev="3.61"/>
+                    </outDistribution>
+                </relation>
+            </relations>
+        </type>
+        <type name="gene">
+            <count>
+                <proportion>
+                    0.36
+                </proportion>
+            </count>
+        </type>
+        <type name="organism">
+            <count>
+                <fixed>
+                    15000
+                </fixed>
+            </count>
+        </type>
+        <type name="article">
+            <count>
+                <proportion>
+                    0.12
+                </proportion>
+            </count>
+            <relations>
+                <relation predicate="authored_by" target="author">
+                    <inDistribution>
+                        <zipfianDistribution exponent="1.78"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <gaussianDistribution mean="5.87" stdev="4.99"/>
+                    </outDistribution>
+                </relation>
+                <relation predicate="published_in" target="journal">
+                    <inDistribution>
+                        <zipfianDistribution exponent="1.37"/>
+                    </inDistribution>
+                    <outDistribution>
+                        <uniformDistribution min="1" max="1"/>
+                    </outDistribution>
+                </relation>
+            </relations>
+        </type>
+        <type name="keyword">
+            <count>
+                <fixed>
+                    1200
+                </fixed>
+            </count>
+        </type>
+        <type name="author">
+            <count>
+                <proportion>
+                    0.21
+                </proportion>
+            </count>
+        </type>
+        <type name="journal">
+            <count>
+                <fixed>
+                    2000
+                </fixed>
+            </count>
+        </type>
+    </types>
+    <predicates>
+        <predicate name="interacts_with">
+        </predicate>
+        <predicate name="encoded_on">
+        </predicate>
+        <predicate name="occurs_in">
+        </predicate>
+        <predicate name="referenced_by">
+        </predicate>
+        <predicate name="has_keyword">
+        </predicate>
+        <predicate name="authored_by">
+        </predicate>
+        <predicate name="published_in">
+        </predicate>
+    </predicates>
+</pgmark>

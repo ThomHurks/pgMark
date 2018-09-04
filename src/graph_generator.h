@@ -4,7 +4,7 @@
 #include "configuration.h"
 
 std::vector<int>
-generateNodeDistributions(DegreeDistribution *const a_Distribution, const int a_StartId, const int a_EndId);
+generateNodeDistributions(RandomDistribution *const a_Distribution, const int a_StartId, const int a_EndId);
 
 class GraphGenerator {
 protected:

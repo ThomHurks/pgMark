@@ -1,15 +1,16 @@
-#ifndef GMARK_DISTRIBUTION_H
-#define GMARK_DISTRIBUTION_H
+#ifndef GMARK_RANDOM_DISTRIBUTION_H
+#define GMARK_RANDOM_DISTRIBUTION_H
 
 #include <random>
 #include <cassert>
 
-class DegreeDistribution {
+class RandomDistribution {
+    // TODO (thom): enforce min, max, unique.
 protected:
     std::mt19937 m_Generator{std::random_device{}()};
     const std::string m_Name;
 
-    DegreeDistribution(const std::string &a_Name) : m_Name(a_Name) {
+    explicit RandomDistribution(const std::string &a_Name) : m_Name(a_Name) {
         assert(!m_Name.empty());
     }
 
@@ -18,22 +19,23 @@ public:
         return m_Name;
     }
 
-    virtual int getNextRandom() = 0;
+    virtual int getRandomInteger() = 0;
+    virtual double getRandomDouble() = 0;
 
     virtual double getMean() const = 0;
 
-    virtual ~DegreeDistribution() = 0;
+    virtual ~RandomDistribution() = 0;
 };
 
-class UniformDegreeDistribution : public DegreeDistribution {
+class UniformIntegerDistribution : public RandomDistribution {
 private:
     const int m_Min;
     const int m_Max;
     const double m_Mean;
     std::uniform_int_distribution<int> m_Distribution;
 public:
-    UniformDegreeDistribution(int a_Min, int a_Max) :
-            DegreeDistribution("uniform"),
+    UniformIntegerDistribution(int a_Min, int a_Max) :
+            RandomDistribution("uniform"),
             m_Min(a_Min),
             m_Max(a_Max),
             m_Mean(static_cast<double>(m_Min + m_Max) / 2.0),
@@ -45,19 +47,52 @@ public:
         return m_Mean;
     }
 
-    int getNextRandom() override {
+    int getRandomInteger() override {
+        return m_Distribution(m_Generator);
+    }
+
+    double getRandomDouble() override {
+        return static_cast<double>(getRandomInteger());
+    }
+};
+
+class UniformDoubleDistribution : public RandomDistribution {
+private:
+    const double m_Min;
+    const double m_Max;
+    const double m_Mean;
+    std::uniform_real_distribution<double> m_Distribution;
+public:
+    UniformDoubleDistribution(double a_Min, double a_Max) :
+            RandomDistribution("uniform"),
+            m_Min(a_Min),
+            m_Max(a_Max),
+            m_Mean((m_Min + m_Max) / 2.0),
+            m_Distribution(m_Min, m_Max) {
+        assert(m_Min <= m_Max);
+    }
+
+    double getMean() const override {
+        return m_Mean;
+    }
+
+    int getRandomInteger() override {
+        return static_cast<int>(getRandomDouble());
+    }
+
+    double getRandomDouble() override {
         return m_Distribution(m_Generator);
     }
 };
 
-class GaussianDegreeDistribution : public DegreeDistribution {
+class GaussianDistribution : public RandomDistribution {
 private:
     const double m_Mean;
     const double m_StandardDeviation;
     std::normal_distribution<double> m_Distribution;
 public:
-    GaussianDegreeDistribution(double a_Mean, double a_StandardDeviation)
-            : DegreeDistribution("gaussian"),
+    GaussianDistribution(double a_Mean, double a_StandardDeviation)
+            : RandomDistribution("gaussian"),
               m_Mean(a_Mean),
               m_StandardDeviation(a_StandardDeviation),
               m_Distribution(a_Mean, a_StandardDeviation) {
@@ -70,12 +105,16 @@ public:
         return m_Mean;
     }
 
-    int getNextRandom() override {
-        return static_cast<int>(std::round(m_Distribution(m_Generator)));
+    int getRandomInteger() override {
+        return static_cast<int>(std::round(getRandomDouble()));
+    }
+
+    double getRandomDouble() override {
+        return m_Distribution(m_Generator);
     }
 };
 
-class ZipfianDegreeDistribution : public DegreeDistribution {
+class ZipfianDistribution : public RandomDistribution {
 private:
     const double m_NthHarmonicNumber;
     const double m_NumericMean;
@@ -91,8 +130,8 @@ private:
     }
 
 public:
-    ZipfianDegreeDistribution(double a_Exponent, int a_Number)
-            : DegreeDistribution("zipfian"),
+    ZipfianDistribution(double a_Exponent, int a_Number)
+            : RandomDistribution("zipfian"),
               m_NthHarmonicNumber(generalizedHarmonic(a_Number, a_Exponent)),
               m_NumericMean(generalizedHarmonic(a_Number, a_Exponent - 1.0) / m_NthHarmonicNumber),
               m_Distribution(0.0, 1.0) {
@@ -111,19 +150,23 @@ public:
         return m_NumericMean;
     }
 
-    int getNextRandom() override {
+    int getRandomInteger() override {
         double z = m_Distribution(m_Generator);
         auto p = std::lower_bound(m_CDF.begin(), m_CDF.end(), z);
         return static_cast<int>(std::distance(m_CDF.begin(), p)) + 1;
     }
+
+    double getRandomDouble() override {
+        return static_cast<double>(getRandomInteger());
+    }
 };
 
-class ZetaDegreeDistribution : public DegreeDistribution {
+class ZetaDistribution : public RandomDistribution {
 private:
     const double m_Alpha;
 public:
-    ZetaDegreeDistribution(double a_Alpha)
-            : DegreeDistribution("zeta"),
+    explicit ZetaDistribution(double a_Alpha)
+            : RandomDistribution("zeta"),
               m_Alpha(a_Alpha) {
         assert(!std::isnan(m_Alpha));
         assert(m_Alpha > 1.0);
@@ -138,23 +181,28 @@ public:
         return 0.0;
     }
 
-    int getNextRandom() override {
+    int getRandomInteger() override {
         // TODO: implement this. (Zeta distribution)
         return 0;
     }
+
+    double getRandomDouble() override {
+        // TODO: implement this. (Zeta distribution)
+        return 0.0;
+    }
 };
 
-class ExponentialDegreeDistribution : public DegreeDistribution {
+class ExponentialDistribution : public RandomDistribution {
 private:
     const double m_Rate;
     const double m_Scale;
     std::exponential_distribution<double> m_Distribution;
 public:
-    ExponentialDegreeDistribution(double a_Rate)
-            : DegreeDistribution("exponential"),
-              m_Rate(a_Rate),
-              m_Scale(1.0 / a_Rate),
-              m_Distribution(a_Rate) {
+    explicit ExponentialDistribution(double a_Scale)
+            : RandomDistribution("exponential"),
+              m_Rate(1.0 / a_Scale),
+              m_Scale(a_Scale),
+              m_Distribution(1.0 / a_Scale) {
         assert(!std::isnan(m_Rate));
         assert(m_Rate > 0.0);
         assert(!std::isnan(m_Scale));
@@ -165,19 +213,23 @@ public:
         return m_Scale;
     }
 
-    int getNextRandom() override {
-        return static_cast<int>(std::round(m_Distribution(m_Generator)));
+    int getRandomInteger() override {
+        return static_cast<int>(std::round(getRandomDouble()));
+    }
+
+    double getRandomDouble() override {
+        return m_Distribution(m_Generator);
     }
 };
 
-class LogNormalDegreeDistribution : public DegreeDistribution {
+class LogNormalDistribution : public RandomDistribution {
 private:
     const double m_Mean;
     const double m_StandardDeviation;
     std::lognormal_distribution<double> m_Distribution;
 public:
-    LogNormalDegreeDistribution(double a_Mean, double a_StandardDeviation)
-            : DegreeDistribution("lognormal"),
+    LogNormalDistribution(double a_Mean, double a_StandardDeviation)
+            : RandomDistribution("lognormal"),
               m_Mean(std::exp(a_Mean + ((a_StandardDeviation * a_StandardDeviation) / 2.0))),
               m_StandardDeviation(a_StandardDeviation),
               m_Distribution(a_Mean, a_StandardDeviation) {
@@ -190,9 +242,13 @@ public:
         return m_Mean;
     }
 
-    int getNextRandom() override {
-        return static_cast<int>(std::round(m_Distribution(m_Generator)));
+    int getRandomInteger() override {
+        return static_cast<int>(std::round(getRandomDouble()));
+    }
+
+    double getRandomDouble() override {
+        return m_Distribution(m_Generator);
     }
 };
 
-#endif //GMARK_DISTRIBUTION_H
+#endif //GMARK_RANDOM_DISTRIBUTION_H

@@ -29,7 +29,7 @@ pugi::xml_document Configuration::openFile(const std::string &a_Filename) {
 const std::map<std::string, std::pair<int, int>> Configuration::computeTypeRanges() const {
     std::map<std::string, std::pair<int, int>> type_ranges;
 
-    const auto &types = getTypes();
+    const auto &types = getTypeNames();
     int node_count = 0;
     for (const auto &type : types) {
         const auto nr_nodes = getConstraint(type);

@@ -16,8 +16,8 @@ add_executable(pgMark
         src/configuration.h
         src/schema.cpp
         src/schema.h
-        src/degree_distribution.cpp
-        src/degree_distribution.h
+        src/random_distribution.cpp
+        src/random_distribution.h
         src/attribute.cpp
         src/attribute.h
         src/affinity.h

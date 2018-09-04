@@ -4,7 +4,7 @@
 #include <unordered_set>
 
 std::vector<int>
-generateNodeDistributions(DegreeDistribution *const a_Distribution, const int a_StartId, const int a_EndId) {
+generateNodeDistributions(RandomDistribution *const a_Distribution, const int a_StartId, const int a_EndId) {
     std::vector<int> nodes;
     int amount = a_EndId - a_StartId + 1;
     assert(amount > 0);
@@ -13,7 +13,7 @@ generateNodeDistributions(DegreeDistribution *const a_Distribution, const int a_
                                 a_Distribution->getMean())); // Maybe use confidence interval?
 
     for (int node_id = a_StartId; node_id <= a_EndId; ++node_id) {
-        int nr_relations = a_Distribution->getNextRandom();
+        int nr_relations = a_Distribution->getRandomInteger();
         for (int i = 0; i < nr_relations; ++i) {
             nodes.push_back(node_id);
         }
@@ -70,6 +70,7 @@ void GraphGenerator::generateRandomEdges(const RelationDistribution &a_Relation,
 }
 
 void GraphGenerator::generateGraph(std::ostream &a_OutputStream) {
+    a_OutputStream << "### NODE RELATIONS ###" << "\n";
     for (const auto &relation : m_Config.getRelationDistributions()) {
         generateRandomEdges(relation, a_OutputStream);
     }
