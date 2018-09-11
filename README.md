@@ -32,6 +32,20 @@ and/or
       year = {2016}
     }
     
+# How to compile
+pgMark uses [CMake](https://cmake.org/runningcmake/). Using the commandline, first go to the pgMark directory, then:
+```commandline
+ccmake .
+```
+Then press 'c' to configure and press 'g' to generate and exit. Then:
+```commandline
+make
+```
+Note that by default pgMark assumes you have clang-tidy installed. If you do not have clang-tidy or do not want to install it, then you can remove the ```CXX_CLANG_TIDY``` target property from the CMakeLists.txt file.
+Based on if you use GCC or CLANG to compile the c++ code you can also pass ```CLANG_COMPILER_FLAGS``` or ```GCC_COMPILER_FLAGS``` to the ```target_compile_options``` command in the CMakeLists.txt file. You can find out what compiler ```make``` uses on your system by checking the ```CC``` environment variable.
+
+If you use an IDE such as CLion it should automatically detect the CMakeLists.txt file and allow you to build. CLion also has the required binaries such as CMake and clang-tidy built-in.
+    
 # Usage
 ```commandline
 ./pgMark examples/social_network.xml 1000
