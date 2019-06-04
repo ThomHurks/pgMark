@@ -1,0 +1,528 @@
+<?xml version="1.0"?>
+<pgmark>
+    <types>
+        <type name="article">
+            <attributes>
+                <attribute name="booktitle" unique="true" required="true">
+                </attribute>
+                <attribute name="cdrom" unique="true" required="true">
+                    <choice>
+                        <regex>
+                            TKDE\d/(k|P)0\d{3}\.pdf
+                        </regex>
+                        <regex>
+                            DPD/\d/P\d{3}\.pdf
+                        </regex>
+                        <regex>
+                            sigmodR/\d{2}-\d/(P0\d{2}|frontmatter)\.pdf
+                        </regex>
+                    </choice>
+                </attribute>
+                <attribute name="crossref" unique="true" required="true">
+                    <regex>
+                        journals/[a-z]{1,7}/\d{4}-\d{1,2}
+                    </regex>
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                    <choice>
+                        <regex>
+                            https://doi.org/10.1016/j.[a-z]{1,10}\.\d{4}\.\d{2}\.\d{3}
+                        </regex>
+                        <regex>
+                            https://www.wikidata.org/entity/[A-Z1-9]{10}
+                        </regex>
+                    </choice>
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                    <categorical>
+                        <category>
+                            oa
+                        </category>
+                        <category>
+                            archive
+                        </category>
+                    </categorical>
+                </attribute>
+                <attribute name="i" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                    <regex>
+                        journals/[a-z]{1,10}/\w{1,20}
+                    </regex>
+                </attribute>
+                <attribute name="mdate" unique="false" required="true">
+                    <date>
+                        <uniformDistribution min="2002-01-03" max="2019-02-18"/>
+                    </date>
+                </attribute>
+                <attribute name="month" unique="false" required="true">
+                    <categorical>
+                        <category>January</category>
+                        <category>January/February</category>
+                        <category>January/February/March</category>
+                        <category>February</category>
+                        <category>February/March</category>
+                        <category>March</category>
+                        <category>April</category>
+                        <category>April/May</category>
+                        <category>April/May/June</category>
+                        <category>May</category>
+                        <category>May-June</category>
+                        <category>May/June</category>
+                        <category>June</category>
+                        <category>July</category>
+                        <category>July-August</category>
+                        <category>July/August</category>
+                        <category>July/August/September</category>
+                        <category>August</category>
+                        <category>August/September</category>
+                        <category>September</category>
+                        <category>October</category>
+                        <category>October/November</category>
+                        <category>October/November/December</category>
+                        <category>November</category>
+                        <category>November-December</category>
+                        <category>December</category>
+                    </categorical>
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                    <regex>
+                        \w{1,100}
+                    </regex>
+                </attribute>
+                <attribute name="note-type" unique="true" required="true">
+                    <categorical>
+                        <category>doi</category>
+                        <category>rating</category>
+                        <category>reviewid</category>
+                    </categorical>
+                </attribute>
+                <attribute name="number" unique="false" required="true">
+                    <choice>
+                        <regex>\d{1,4}</regex>
+                        <regex>\d{2}(/|-)\d{2}</regex>
+                        <regex>\d{2}-[A-Z]</regex>
+                        <regex>Supplement( |-)\d{1,2}</regex>
+                    </choice>
+                </attribute>
+                <attribute name="pages" unique="false" required="true">
+                    <regex>\d{1,3}-\d{1,3}</regex>
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                    <categorical>
+                        <category>edited</category>
+                        <category>withdrawn</category>
+                        <category>informal</category>
+                        <category>data</category>
+                        <category>informal withdrawn</category>
+                        <category>survey</category>
+                        <category>software</category>
+                    </categorical>
+                </attribute>
+                <attribute name="sub" unique="true" required="true">
+
+                </attribute>
+                <attribute name="sup" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                    \w{1,100}
+                </attribute>
+                <attribute name="tt" unique="true" required="true">
+                    <categorical>
+                        <category>Deepr</category>
+                        <category>case</category>
+                        <category>diffgrob2</category>
+                        <category>B</category>
+                        <category>alldifferent</category>
+                        <category>R</category>
+                        <category>tspair</category>
+                        <category>Intervor</category>
+                        <category>baobabLUNA</category>
+                        <category>edgeR</category>
+                        <category>RNAsnoop</category>
+                        <category>Repitools</category>
+                        <category>block</category>
+                        <category>via</category>
+                        <category>PROP</category>
+                        <category>IIPBF</category>
+                        <category>MATLAB</category>
+                    </categorical>
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                    <regex>
+                        db/journals/[a-z]{1,10}/[a-z1-9]{1,10}\.html#\w{1,15}
+                    </regex>
+                </attribute>
+                <attribute name="volume" unique="false" required="true">
+                    <choice>
+                        <regex>\d{1,2}</regex>
+                        <regex>\d{1,2}-\d{1,2}</regex>
+                    </choice>
+                </attribute>
+                <attribute name="year" unique="false" required="true">
+                    <numerical>
+                        <uniformDistribution min="1936" max="2020"/>
+                    </numerical>
+                </attribute>
+            </attributes>
+        </type>
+        <type name="book">
+            <attributes>
+                <attribute name="booktitle" unique="true" required="true">
+                    <regex>\w{3,136}</regex>
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                    <choice>
+                        <regex>
+                            https://doi.org/10.1016/j.[a-z]{1,10}\.\d{4}\.\d{2}\.\d{3}
+                        </regex>
+                        <regex>
+                            https://www.wikidata.org/entity/[A-Z1-9]{10}
+                        </regex>
+                    </choice>
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                    <categorical>
+                        <category>
+                            oa
+                        </category>
+                    </categorical>
+                </attribute>
+                <attribute name="i" unique="false" required="true">
+                    <categorical>
+                        <category>CAD/CAM</category>
+                        <category>NC</category>
+                    </categorical>
+                </attribute>
+                <attribute name="isbn" unique="false" required="true">
+                    <regex>\d{3}-\d-\d{4}-\d{4}-\d</regex>
+                </attribute>
+                <attribute name="isbn-type" unique="false" required="true">
+                    <categorical>
+                        <category>online</category>
+                        <category>print</category>
+                    </categorical>
+                </attribute>
+                <attribute name="key" unique="false" required="true">
+                    <regex>(reference|books|series|phd)/[a-z]{3,10}/\w{1,20}</regex>
+                </attribute>
+                <attribute name="mdate" unique="false" required="true">
+                    <date>
+                        <uniformDistribution min="2002-01-03" max="2019-02-17"/>
+                    </date>
+                </attribute>
+                <attribute name="note" unique="false" required="true">
+                    <regex>\w{17,93}</regex>
+                </attribute>
+                <attribute name="note-type" unique="false" required="true">
+                    <categorical>
+                        <category>source</category>
+                        <category>isbn</category>
+                    </categorical>
+                </attribute>
+                <attribute name="pages" unique="false" required="true">
+                    <regex>1-\d{3}</regex>
+                </attribute>
+                <attribute name="publtype" unique="false" required="true">
+                    <categorical>
+                        <category>habil</category>
+                        <category>informal</category>
+                        <category>withdrawn</category>
+                    </categorical>
+                </attribute>
+                <attribute name="sub" unique="false" required="true">
+                </attribute>
+                <attribute name="sup" unique="false" required="true">
+                    <categorical>
+                        <category>nd</category>
+                        <category>rd</category>
+                        <category>TM</category>
+                    </categorical>
+                </attribute>
+                <attribute name="title" unique="false" required="true">
+                    <regex>\w{1,406}</regex>
+                </attribute>
+                <attribute name="url" unique="false" required="true">
+                </attribute>
+                <attribute name="volume" unique="false" required="true">
+                    <choice>
+                        <regex probability="0.005">E-\d{2}</regex>
+                        <numerical probability="0.995">
+                            <uniformDistribution min="0" max="1000"/>
+                        </numerical>
+                    </choice>
+                </attribute>
+                <attribute name="year" unique="false" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="editor">
+            <attributes>
+                <attribute name="editor" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="series">
+            <attributes>
+                <attribute name="href" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="incollection">
+            <attributes>
+                <attribute name="booktitle" unique="true" required="true">
+                </attribute>
+                <attribute name="cdrom" unique="true" required="true">
+                </attribute>
+                <attribute name="chapter" unique="true" required="true">
+                </attribute>
+                <attribute name="crossref" unique="true" required="true">
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                </attribute>
+                <attribute name="i" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="number" unique="true" required="true">
+                </attribute>
+                <attribute name="pages" unique="true" required="true">
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                </attribute>
+                <attribute name="sub" unique="true" required="true">
+                </attribute>
+                <attribute name="sup" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="inproceedings">
+            <attributes>
+                <attribute name="booktitle" unique="true" required="true">
+                </attribute>
+                <attribute name="cdrom" unique="true" required="true">
+                </attribute>
+                <attribute name="chapter" unique="true" required="true">
+                </attribute>
+                <attribute name="crossref" unique="true" required="true">
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                </attribute>
+                <attribute name="i" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="number" unique="true" required="true">
+                </attribute>
+                <attribute name="pages" unique="true" required="true">
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                </attribute>
+                <attribute name="sub" unique="true" required="true">
+                </attribute>
+                <attribute name="sup" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="journal">
+            <attributes>
+                <attribute name="journal" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="mastersthesis">
+            <attributes>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="phdthesis">
+            <attributes>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                </attribute>
+                <attribute name="i" unique="true" required="true">
+                </attribute>
+                <attribute name="isbn" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="month" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="note-type" unique="true" required="true">
+                </attribute>
+                <attribute name="number" unique="true" required="true">
+                </attribute>
+                <attribute name="pages" unique="true" required="true">
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                </attribute>
+                <attribute name="series" unique="true" required="true">
+                </attribute>
+                <attribute name="series-href" unique="true" required="true">
+                </attribute>
+                <attribute name="sub" unique="true" required="true">
+                </attribute>
+                <attribute name="sup" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                </attribute>
+                <attribute name="volume" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="proceedings">
+            <attributes>
+                <attribute name="address" unique="true" required="true">
+                </attribute>
+                <attribute name="booktitle" unique="true" required="true">
+                </attribute>
+                <attribute name="crossref" unique="true" required="true">
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="ee-type" unique="true" required="true">
+                </attribute>
+                <attribute name="i" unique="true" required="true">
+                </attribute>
+                <attribute name="isbn" unique="true" required="true">
+                </attribute>
+                <attribute name="isbn-type" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="note-type" unique="true" required="true">
+                </attribute>
+                <attribute name="number" unique="true" required="true">
+                </attribute>
+                <attribute name="pages" unique="true" required="true">
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                </attribute>
+                <attribute name="series" unique="true" required="true">
+                </attribute>
+                <attribute name="series-href" unique="true" required="true">
+                </attribute>
+                <attribute name="sub" unique="true" required="true">
+                </attribute>
+                <attribute name="sup" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                </attribute>
+                <attribute name="volume" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="publisher">
+            <attributes>
+                <attribute name="publisher" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="school">
+            <attributes>
+                <attribute name="school" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="www">
+            <attributes>
+                <attribute name="booktitle" unique="true" required="true">
+                </attribute>
+                <attribute name="crossref" unique="true" required="true">
+                </attribute>
+                <attribute name="ee" unique="true" required="true">
+                </attribute>
+                <attribute name="key" unique="true" required="true">
+                </attribute>
+                <attribute name="mdate" unique="true" required="true">
+                </attribute>
+                <attribute name="note" unique="true" required="true">
+                </attribute>
+                <attribute name="note-label" unique="true" required="true">
+                </attribute>
+                <attribute name="note-type" unique="true" required="true">
+                </attribute>
+                <attribute name="publtype" unique="true" required="true">
+                </attribute>
+                <attribute name="title" unique="true" required="true">
+                </attribute>
+                <attribute name="url" unique="true" required="true">
+                </attribute>
+                <attribute name="url-type" unique="true" required="true">
+                </attribute>
+                <attribute name="year" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+        <type name="cite">
+            <attributes>
+                <attribute name="cite" unique="true" required="true">
+                </attribute>
+            </attributes>
+        </type>
+    </types>
+    <predicates>
+        <predicate name="published_by">
+        </predicate>
+        <predicate name="submitted_at">
+        </predicate>
+        <predicate name="edited_by">
+        </predicate>
+        <predicate name="published_in">
+        </predicate>
+        <predicate name="authored_by">
+        </predicate>
+    </predicates>
+</pgmark>
