@@ -43,7 +43,7 @@ public:
         return types;
     }
 
-    const std::vector<std::unique_ptr<Attribute>>& getTypeAttributes(const std::string &a_TypeName) const {
+    const std::vector<std::unique_ptr<Attribute>> &getTypeAttributes(const std::string &a_TypeName) const {
         return m_Schema->getTypes().at(a_TypeName);
     }
 

@@ -20,6 +20,7 @@ public:
     }
 
     virtual int getRandomInteger() = 0;
+
     virtual double getRandomDouble() = 0;
 
     virtual double getMean() const = 0;
@@ -49,6 +50,31 @@ public:
 
     int getRandomInteger() override {
         return m_Distribution(m_Generator);
+    }
+
+    double getRandomDouble() override {
+        return static_cast<double>(getRandomInteger());
+    }
+};
+
+class UniformIntegerUniqueDistribution : public RandomDistribution {
+private:
+    int m_Counter;
+    const int m_Min;
+    const double m_Mean;
+public:
+    explicit UniformIntegerUniqueDistribution(int a_Min) :
+            RandomDistribution("counter"),
+            m_Counter(a_Min - 1),
+            m_Min(a_Min),
+            m_Mean(static_cast<double>(std::numeric_limits<int>::max() -  m_Min) / 2.0) {}
+
+    double getMean() const override {
+        return m_Mean;
+    }
+
+    int getRandomInteger() override {
+        return ++m_Counter;
     }
 
     double getRandomDouble() override {

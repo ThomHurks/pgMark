@@ -30,7 +30,7 @@
             </relations>
             <attributes>
                 <attribute name="email" unique="true" required="true">
-                    <regex>[a-z0-9][a-z0-9][a-z0-9_-][a-z0-9][a-z0-9]@(gmail|hotmail|live|outlook|yahoo)\.com</regex>
+                    <regex>€\d[^a][a-z0-9][a-z0-9][a-z0-9_-][a-z0-9][a-z0-9]@(gmail|hotmail|live|outlook|yahoo)\.com</regex>
                 </attribute>
                 <attribute name="gender" unique="false" required="true">
                     <categorical>
@@ -38,13 +38,13 @@
                         <category probability="0.5">female</category>
                     </categorical>
                 </attribute>
-                <attribute name="age" unique="false" required="true" min="0" max="100">
+                <attribute name="age" unique="false" required="true">
                     <numeric min="0" max="122">
                         <gaussianDistribution mean="43" stdev="15"/>
                     </numeric>
                 </attribute>
-                <attribute name="income" unique="false" required="true" min="0" max="50000000">
-                    <numeric>
+                <attribute name="income" unique="false" required="true">
+                    <numeric min="0" max="50000000">
                         <exponentialDistribution scale="26000"/>
                     </numeric>
                 </attribute>
@@ -58,7 +58,7 @@
             </count>
             <attributes>
                 <attribute name="name" unique="true" required="true">
-                    <regex>\w+</regex>
+                    <regex>[A-Z][a-z]{2,20}</regex>
                 </attribute>
             </attributes>
         </type>

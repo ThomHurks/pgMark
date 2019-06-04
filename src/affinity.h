@@ -10,7 +10,7 @@ private:
     double m_Weight;
 public:
     Affinity(std::string a_Name, bool a_Inverse, double a_Weight)
-            : m_Name(a_Name),
+            : m_Name(std::move(a_Name)),
               m_Inverse(a_Inverse),
               m_Weight(a_Weight) {}
 };

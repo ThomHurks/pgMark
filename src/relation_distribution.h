@@ -22,14 +22,14 @@ public:
                          std::unique_ptr<RandomDistribution> a_InDistribution,
                          std::unique_ptr<RandomDistribution> a_OutDistribution,
                          std::map<std::string, Affinity> a_Affinities)
-            : m_Source(a_Source),
-              m_Target(a_Target),
-              m_Predicate(a_Predicate),
+            : m_Source(std::move(a_Source)),
+              m_Target(std::move(a_Target)),
+              m_Predicate(std::move(a_Predicate)),
               m_AllowLoops(a_AllowLoops),
               m_AllowParallelEdges(a_AllowParallelEdges),
               m_InDistribution(std::move(a_InDistribution)),
               m_OutDistribution(std::move(a_OutDistribution)),
-              m_Affinities(a_Affinities) {}
+              m_Affinities(std::move(a_Affinities)) {}
 
     // Move constructor.
     RelationDistribution(RelationDistribution &&a_Other)

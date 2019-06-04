@@ -3,7 +3,6 @@
 #include "node_attribute_generator.h"
 #include <fstream>
 #include <getopt.h>
-#include <iostream>
 #include <sys/stat.h>
 
 int main(int argc, char *argv[]) {
@@ -11,7 +10,6 @@ int main(int argc, char *argv[]) {
     std::ostream::sync_with_stdio(false); // On some platforms, stdout flushes on \n.
     std::string graph_file;
 
-    int c;
     while (true) {
         int option_index = 0;
         static struct option long_options[] = {
@@ -20,7 +18,7 @@ int main(int argc, char *argv[]) {
                 {nullptr,  0,                 nullptr, 0}
         };
 
-        c = getopt_long_only(argc, argv, "o:h",
+        int c = getopt_long_only(argc, argv, "o:h",
                              long_options, &option_index);
         if (c == -1) {
             break;

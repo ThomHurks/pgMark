@@ -1,5 +1,4 @@
 #include "configuration.h"
-#include <iostream>
 
 Configuration::Configuration(const std::string &a_Filename, const int a_GraphSize) {
     assert(a_GraphSize > 0);

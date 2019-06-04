@@ -24,7 +24,7 @@ public:
     GraphGenerator &operator=(const GraphGenerator &) = delete; // no copy operations.
     GraphGenerator(GraphGenerator &&) = delete; // no move operations.
     GraphGenerator &operator=(GraphGenerator &&) = delete; // no move operations.
-    GraphGenerator(const Configuration &a_Config);
+    explicit GraphGenerator(const Configuration &a_Config);
 
     void generateGraph(std::ostream &a_OutputStream);
 };

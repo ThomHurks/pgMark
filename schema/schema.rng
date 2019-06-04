@@ -1,0 +1,390 @@
+<?xml version="1.0"?>
+<grammar datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
+         xmlns="http://relaxng.org/ns/structure/1.0">
+    <start>
+        <element name="pgmark">
+            <element name="types">
+                <oneOrMore>
+                    <element name="type">
+                        <ref name="typeContent"/>
+                    </element>
+                </oneOrMore>
+            </element>
+            <element name="predicates">
+                <oneOrMore>
+                    <element name="predicate">
+                        <ref name="predicateContent"/>
+                    </element>
+                </oneOrMore>
+            </element>
+        </element>
+    </start>
+    <define name="typeContent">
+        <attribute name="name">
+            <data type="string">
+                <param name="minLength">1</param>
+            </data>
+        </attribute>
+        <element name="count">
+            <ref name="countContent"/>
+        </element>
+        <optional>
+            <element name="attributes">
+                <oneOrMore>
+                    <element name="attribute">
+                        <ref name="attributeContent"/>
+                    </element>
+                </oneOrMore>
+            </element>
+        </optional>
+        <optional>
+            <element name="relations">
+                <oneOrMore>
+                    <element name="relation">
+                        <ref name="relationContent"/>
+                    </element>
+                </oneOrMore>
+            </element>
+        </optional>
+    </define>
+     <define name="predicateContent">
+         <attribute name="name">
+            <data type="string">
+                <param name="minLength">1</param>
+            </data>
+         </attribute>
+         <optional>
+             <element name="attributes">
+                 <oneOrMore>
+                     <element name="attribute">
+                         <ref name="attributeContent"/>
+                     </element>
+                 </oneOrMore>
+             </element>
+         </optional>
+    </define>
+    <define name="attributeContent">
+        <attribute name="name">
+            <data type="string">
+                <param name="minLength">1</param>
+            </data>
+        </attribute>
+        <attribute name="required">
+            <data type="boolean"/>
+        </attribute>
+        <attribute name="unique">
+            <data type="boolean"/>
+        </attribute>
+        <choice>
+            <element name="numeric">
+                <ref name="numericContent"/>
+            </element>
+           <element name="date">
+                <ref name="dateContent"/>
+            </element>
+            <element name="categorical">
+                <ref name="categoricalContent"/>
+            </element>
+            <element name="regex">
+                <ref name="regexContent"/>
+            </element>
+            <element name="choice">
+                <oneOrMore>
+                    <choice>
+                        <element name="numeric">
+                            <ref name="numericContent"/>
+                        </element>
+                        <element name="date">
+                            <ref name="dateContent"/>
+                        </element>
+                        <element name="categorical">
+                            <ref name="categoricalContent"/>
+                        </element>
+                        <element name="regex">
+                            <ref name="regexContent"/>
+                        </element>
+                    </choice>
+                </oneOrMore>
+            </element>
+        </choice>
+    </define>
+    <define name="relationContent">
+        <attribute name="predicate">
+            <data type="string">
+                <param name="minLength">1</param>
+            </data>
+        </attribute>
+        <attribute name="target">
+            <data type="string">
+                <param name="minLength">1</param>
+            </data>
+        </attribute>
+        <optional>
+            <attribute name="allow_loops">
+                <data type="boolean"/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="allow_parallel_edges">
+                <data type="boolean"/>
+            </attribute>
+        </optional>
+        <element name="inDistribution">
+            <ref name="distributionContent"/>
+        </element>
+        <element name="outDistribution">
+            <ref name="distributionContent"/>
+        </element>
+        <optional>
+            <element name="affinities">
+                <oneOrMore>
+                    <element name="attributeAffinity">
+                        <attribute name="name">
+                            <data type="string">
+                                <param name="minLength">1</param>
+                            </data>
+                        </attribute>
+                        <attribute name="inverse">
+                            <data type="boolean"/>
+                        </attribute>
+                        <attribute name="weight">
+                            <data type="float">
+                                <param name="minExclusive">0</param>
+                                <param name="maxInclusive">1</param>
+                            </data>
+                        </attribute>
+                    </element>
+                </oneOrMore>
+            </element>
+        </optional>
+    </define>
+    <define name="distributionContent">
+        <choice>
+            <element name="uniformDistribution">
+                <ref name="uniformContent"/>
+            </element>
+            <element name="gaussianDistribution">
+                <ref name="gaussianContent"/>
+            </element>
+            <element name="zipfianDistribution">
+                <ref name="zipfianContent"/>
+            </element>
+            <element name="zetaDistribution">
+                <ref name="zetaContent"/>
+            </element>
+            <element name="exponentialDistribution">
+                <ref name="exponentialContent"/>
+            </element>
+            <element name="lognormalDistribution">
+                <ref name="lognormalContent"/>
+            </element>
+        </choice>
+    </define>
+    <define name="dateDistributionContent">
+        <choice>
+            <element name="uniformDistribution">
+                <ref name="uniformDateContent"/>
+            </element>
+            <element name="gaussianDistribution">
+                <ref name="gaussianDateContent"/>
+            </element>
+            <element name="lognormalDistribution">
+                <ref name="lognormalDateContent"/>
+            </element>
+        </choice>
+    </define>
+    <define name="numericContent">
+        <optional>
+            <attribute name="min">
+                <data type="float"/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="max">
+                <data type="float"/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="precision">
+                <data type="integer">
+                      <param name="minInclusive">0</param>
+                </data>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="probability">
+                <data type="float">
+                    <param name="minInclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </attribute>
+        </optional>
+        <ref name="distributionContent"/>
+    </define>
+    <define name="dateContent">
+        <optional>
+            <attribute name="min">
+                <data type="date"/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="max">
+                <data type="date"/>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="precision">
+                <data type="integer">
+                      <param name="minInclusive">0</param>
+                </data>
+            </attribute>
+        </optional>
+        <optional>
+            <attribute name="probability">
+                <data type="float">
+                    <param name="minInclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </attribute>
+        </optional>
+        <ref name="dateDistributionContent"/>
+    </define>
+    <define name="categoricalContent">
+        <optional>
+             <attribute name="file">
+                <data type="anyURI">
+                    <param name="minLength">1</param>
+                </data>
+             </attribute>
+         </optional>
+         <optional>
+            <attribute name="probability">
+                <data type="float">
+                    <param name="minInclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </attribute>
+         </optional>
+         <optional>
+            <oneOrMore>
+                <element name="category">
+                    <ref name="categoryContent"/>
+                </element>
+            </oneOrMore>
+         </optional>
+    </define>
+    <define name="categoryContent">
+        <data type="string">
+            <param name="minLength">1</param>
+        </data>
+        <optional>
+            <attribute name="probability">
+                <data type="float">
+                    <param name="minInclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </attribute>
+        </optional>
+    </define>
+     <define name="regexContent">
+         <optional>
+             <attribute name="probability">
+                <data type="float">
+                    <param name="minInclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </attribute>
+         </optional>
+        <data type="string">
+            <param name="minLength">1</param>
+        </data>
+    </define>
+    <define name="uniformContent">
+        <attribute name="min">
+            <data type="float"/>
+        </attribute>
+        <attribute name="max">
+            <data type="float"/>
+        </attribute>
+    </define>
+    <define name="uniformDateContent">
+        <attribute name="min">
+            <data type="date"/>
+        </attribute>
+        <attribute name="max">
+            <data type="date"/>
+        </attribute>
+    </define>
+    <define name="gaussianContent">
+        <attribute name="mean">
+            <data type="float"/>
+        </attribute>
+        <attribute name="stdev">
+            <data type="float">
+                 <param name="minExclusive">0</param>
+            </data>
+        </attribute>
+    </define>
+    <define name="gaussianDateContent">
+        <attribute name="mean">
+            <data type="date"/>
+        </attribute>
+        <attribute name="stdev">
+            <data type="date"/>
+        </attribute>
+    </define>
+    <define name="zipfianContent">
+        <attribute name="exponent">
+            <data type="float">
+                <param name="minInclusive">0</param>
+            </data>
+        </attribute>
+    </define>
+    <define name="zetaContent">
+        <attribute name="alpha">
+            <data type="float">
+                <param name="minExclusive">1</param>
+            </data>
+        </attribute>
+    </define>
+    <define name="exponentialContent">
+        <attribute name="scale">
+            <data type="float">
+                <param name="minExclusive">0</param>
+            </data>
+        </attribute>
+    </define>
+    <define name="lognormalContent">
+        <attribute name="mean">
+            <data type="float"/>
+        </attribute>
+        <attribute name="stdev">
+            <data type="float">
+                 <param name="minExclusive">0</param>
+            </data>
+        </attribute>
+    </define>
+    <define name="lognormalDateContent">
+        <attribute name="mean">
+            <data type="date"/>
+        </attribute>
+        <attribute name="stdev">
+            <data type="date"/>
+        </attribute>
+    </define>
+    <define name="countContent">
+        <choice>
+            <element name="fixed">
+                <data type="integer">
+                    <param name="minInclusive">1</param>
+                </data>
+            </element>
+            <element name="proportion">
+                <data type="float">
+                    <param name="minExclusive">0</param>
+                    <param name="maxInclusive">1</param>
+                </data>
+            </element>
+        </choice>
+    </define>
+</grammar>

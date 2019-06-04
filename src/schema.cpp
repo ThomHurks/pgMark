@@ -1,5 +1,10 @@
 #include "schema.h"
-#include <algorithm>
+#include <fstream>
+#include <string>
+
+const std::regex Schema::m_DateRegex(R"(^(\d{4})-(\d{2})-(\d{2})$)");
+const std::regex Schema::m_CSVParseRegex(R"'(^(?:"(.+)"|(.+)),(1|\d\.\d+)$)'");
+const double Schema::m_LenientCategoryProbabilityEpsilon = 0.1;
 
 Schema::Schema(const pugi::xml_node a_TypesNode, const pugi::xml_node a_PredicatesNode, const int a_GraphSize) {
     getTypes(m_Types, a_TypesNode);
@@ -72,6 +77,38 @@ void Schema::getTypes(std::map<std::string, std::vector<std::unique_ptr<Attribut
     }
 }
 
+long Schema::dateStringToEpoch(const std::string &a_DateString) {
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    std::smatch match;
+    bool success = false;
+    if (std::regex_match(a_DateString, match, m_DateRegex)) {
+        if (match.size() == 4) {
+            try {
+                year = stoi(match[1].str());
+                month = stoi(match[2].str());
+                day = stoi(match[3].str());
+                success = true;
+            } catch (std::logic_error&) {
+                // Do nothing.
+            }
+        }
+    }
+    if (!success) {
+        throw std::invalid_argument("Date does not follow the pattern 1988-11-23.");
+    }
+    struct tm t = {0,0,0,0,0,0,0,0,0,0, nullptr};
+    t.tm_year = year - 1900;
+    t.tm_mon = month - 1;
+    t.tm_mday = day;
+    time_t timeSinceEpoch = mktime(&t);
+    if (timeSinceEpoch == -1) {
+        throw std::invalid_argument("Date is not a valid date.");
+    }
+    return timeSinceEpoch;
+}
+
 std::vector<RelationDistribution> Schema::getDistributions(const pugi::xml_node a_TypesNode,
                                                            const std::set<std::string> &a_TypeNames,
                                                            const std::set<std::string> &a_PredicateNames,
@@ -116,8 +153,8 @@ std::vector<RelationDistribution> Schema::getDistributions(const pugi::xml_node 
             int nr_source_nodes = a_Constraints.at(source);
             int nr_target_nodes = a_Constraints.at(target);
             distributions.emplace_back(source, target, predicate, allow_loops, allow_parallel_edges,
-                                       getDistribution(relation.child("inDistribution"), nr_target_nodes, true),
-                                       getDistribution(relation.child("outDistribution"), nr_source_nodes, true),
+                                       getDistribution(relation.child("inDistribution"), nr_target_nodes, true, false, false),
+                                       getDistribution(relation.child("outDistribution"), nr_source_nodes, true, false, false),
                                        affinities);
         }
     }
@@ -147,9 +184,30 @@ std::map<std::string, Affinity> Schema::getAffinities(const pugi::xml_node a_Aff
     return affinities;
 }
 
+double Schema::attributeAsDouble(pugi::xml_attribute a_Attribute, const bool a_IsDate, const double a_Default) {
+    if (a_IsDate) {
+        const std::string &attrAsString = a_Attribute.as_string();
+        if (attrAsString.empty()) {
+            return a_Default;
+        }
+        return dateStringToEpoch(attrAsString);
+    }
+    return a_Attribute.as_double(a_Default);
+}
+
+int Schema::attributeAsInteger(pugi::xml_attribute a_Attribute, const bool a_IsDate) {
+    if (a_IsDate) {
+        // TODO(thom): this cast causes the 2038 problem. Fix it.
+        return static_cast<int>(dateStringToEpoch(a_Attribute.as_string()));
+    }
+    return a_Attribute.as_int();
+}
+
 std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node a_DistributionNode,
                                                             const int a_NrOfNodes,
-                                                            const bool a_IntegerPrecision) {
+                                                            const bool a_IntegerPrecision,
+                                                            const bool a_IsDate,
+                                                            const bool a_MustBeUnique) {
     pugi::xml_node distribution = a_DistributionNode.child("uniformDistribution");
     if (distribution) {
         // When generating node degrees with the uniform distribution, it only makes sense that the min and max
@@ -157,25 +215,32 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
         // We cannot use that trick for other distributions like the Gaussian distribution because even for node
         // degrees the mean may be a floating point number.
         if (a_IntegerPrecision) {
-            int min = distribution.attribute("min").as_int();
-            int max = distribution.attribute("max").as_int();
+            int min = attributeAsInteger(distribution.attribute("min"), a_IsDate);
+            pugi::xml_attribute max_attribute = distribution.attribute("max");
+            // If the user specified that the generated values must be unique and no max parameter is specified
+            // for the uniform integer distribution, then we can simply use a counter starting from the minimum
+            // value as an optimization.
+            if (!max_attribute && a_MustBeUnique) {
+                return std::make_unique<UniformIntegerUniqueDistribution>(min);
+            }
+            int max = attributeAsInteger(max_attribute, a_IsDate);
             if (min > max) {
                 throw std::invalid_argument("Invalid uniform distribution; min > max");
             }
             return std::make_unique<UniformIntegerDistribution>(min, max);
-        } else {
-            double min = distribution.attribute("min").as_double();
-            double max = distribution.attribute("max").as_double();
-            if (min > max) {
-                throw std::invalid_argument("Invalid uniform distribution; min > max");
-            }
-            return std::make_unique<UniformDoubleDistribution>(min, max);
         }
+
+        double min = attributeAsDouble(distribution.attribute("min"), a_IsDate);
+        double max = attributeAsDouble(distribution.attribute("max"), a_IsDate);
+        if (min > max) {
+            throw std::invalid_argument("Invalid uniform distribution; min > max");
+        }
+        return std::make_unique<UniformDoubleDistribution>(min, max);
     }
     distribution = a_DistributionNode.child("gaussianDistribution");
     if (distribution) {
-        double mean = distribution.attribute("mean").as_double();
-        double stdev = distribution.attribute("stdev").as_double(-1.0);
+        double mean = attributeAsDouble(distribution.attribute("mean"), a_IsDate);
+        double stdev = attributeAsDouble(distribution.attribute("stdev"), a_IsDate, -1.0);
         if (stdev <= 0.0 || stdev <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Standard deviation must be strictly larger than 0");
         }
@@ -183,7 +248,7 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
     }
     distribution = a_DistributionNode.child("zipfianDistribution");
     if (distribution) {
-        double exponent = distribution.attribute("exponent").as_double(-1.0);
+        double exponent = attributeAsDouble(distribution.attribute("exponent"), a_IsDate, -1.0);
         if (exponent < 0.0) {
             throw std::invalid_argument("Exponent must be larger than or equal to 0");
         }
@@ -192,7 +257,7 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
     // TODO(thom): check the Zeta parameters parsing.
     distribution = a_DistributionNode.child("zetaDistribution");
     if (distribution) {
-        double alpha = distribution.attribute("alpha").as_double();
+        double alpha = attributeAsDouble(distribution.attribute("alpha"), a_IsDate);
         if (alpha < 1.0 || (alpha - 1.0) <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Alpha must be strictly larger than 1");
         }
@@ -200,7 +265,7 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
     }
     distribution = a_DistributionNode.child("exponentialDistribution");
     if (distribution) {
-        double scale = distribution.attribute("scale").as_double(-1.0);
+        double scale = attributeAsDouble(distribution.attribute("scale"), a_IsDate, -1.0);
         if (scale <= 0.0 || scale <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Scale must be strictly larger than 0");
         }
@@ -208,8 +273,8 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
     }
     distribution = a_DistributionNode.child("lognormalDistribution");
     if (distribution) {
-        double mean = distribution.attribute("mean").as_double();
-        double stdev = distribution.attribute("stdev").as_double(-1.0);
+        double mean = attributeAsDouble(distribution.attribute("mean"), a_IsDate);
+        double stdev = attributeAsDouble(distribution.attribute("stdev"), a_IsDate, -1.0);
         if (stdev <= 0.0 || stdev <= std::numeric_limits<double>::epsilon()) {
             throw std::invalid_argument("Standard deviation must be strictly larger than 0");
         }
@@ -218,57 +283,201 @@ std::unique_ptr<RandomDistribution> Schema::getDistribution(const pugi::xml_node
     throw std::invalid_argument("Distribution must be uniform, gaussian, zipfian, zeta, exponential or lognormal");
 }
 
+std::unique_ptr<NumericAttribute> Schema::getNumericAttribute(const pugi::xml_node a_AttributeNode, const bool a_IsDate,
+                                             const std::string& a_Name, const bool a_Required, const bool a_Unique) {
+    double min = std::numeric_limits<double>::lowest();
+    double max = std::numeric_limits<double>::max();
+    pugi::xml_attribute min_attr = a_AttributeNode.attribute("min");
+    pugi::xml_attribute max_attr = a_AttributeNode.attribute("max");
+    if (min_attr) {
+        min = attributeAsDouble(min_attr, a_IsDate);
+    }
+    if (max_attr) {
+        max = attributeAsDouble(max_attr, a_IsDate);
+    }
+    if (min > max) {
+        throw std::invalid_argument("Invalid min and max attributes for numeric or date element");
+    }
+    int precision = a_AttributeNode.attribute("precision").as_int(0);
+    if (precision < 0) {
+        throw std::invalid_argument("Invalid precision attribute for numeric element");
+    }
+    // TODO(thom): Number argument for Zipfian should be configurable.
+    int number = 1000;
+    if (a_IsDate) {
+        return std::make_unique<DateAttribute>(a_Name, a_Required, a_Unique, min, max, precision,
+                                               getDistribution(a_AttributeNode, number, 0 == precision, true, a_Unique));
+    }
+    return std::make_unique<NumericAttribute>(a_Name, a_Required, a_Unique, min, max, precision,
+                                              getDistribution(a_AttributeNode, number, 0 == precision, false, a_Unique));
+}
+
 std::vector<std::unique_ptr<Attribute>> Schema::getAttributes(const pugi::xml_node a_AttributesNode) {
     std::vector<std::unique_ptr<Attribute>> attributes;
-    for (pugi::xml_node attribute : a_AttributesNode.children("attribute")) {
-        std::string name = attribute.attribute("name").as_string();
-        if (name.empty()) {
-            throw std::invalid_argument("Attribute name cannot be empty");
+    for (pugi::xml_node attribute : a_AttributesNode.children()) {
+        const std::string name = attribute.name();
+        if (name == "attribute") {
+            attributes.emplace_back(parseAttributeNode(attribute));
+        } else {
+            throw std::invalid_argument("Children of the attributes node must be attribute elements.");
         }
-        bool required = attribute.attribute("required").as_bool();
-        bool unique = attribute.attribute("unique").as_bool();
-        pugi::xml_node numeric_kind = attribute.child("numeric");
-        if (numeric_kind) {
-            double min = attribute.attribute("min").as_double();
-            double max = attribute.attribute("max").as_double();
-            if (min > max) {
-                throw std::invalid_argument("Invalid min and max attributes for numeric element");
-            }
-            double precision = attribute.attribute("precision").as_int(0);
-            if (precision < 0) {
-                throw std::invalid_argument("Invalid precision attribute for numeric element");
-            }
-            // TODO(thom): Number argument for Zipfian should be configurable.
-            int number = 1000;
-            attributes.push_back(std::make_unique<NumericAttribute>(name, required, unique, min, max, precision,
-                                                                    getDistribution(numeric_kind, number, false)));
-            continue;
-        }
-        pugi::xml_node categorical_kind = attribute.child("categorical");
-        if (categorical_kind) {
-            std::map<std::string, double> categories = getCategories(categorical_kind);
-            attributes.push_back(std::make_unique<CategoricalAttribute>(name, required, unique, categories));
-            continue;
-        }
-        pugi::xml_node regex_kind = attribute.child("regex");
-        if (regex_kind) {
-            std::string regex = regex_kind.text().as_string();
-            if (regex.empty()) {
-                throw std::invalid_argument("Attribute regex cannot be empty");
-            }
-            attributes.push_back(std::make_unique<RegexAttribute>(name, required, unique, regex));
-            continue;
-        }
-        throw std::invalid_argument("Attribute must be numeric, categorical or regex");
     }
     return attributes;
 }
 
-std::map<std::string, double> Schema::getCategories(const pugi::xml_node a_categoriesNode) {
+std::unique_ptr<Attribute> Schema::getChoiceAttribute(const pugi::xml_node a_ChoiceNode, const std::string &a_Name,
+                                                      bool a_Required, bool a_Unique) {
+    std::vector<std::unique_ptr<Attribute>> attributes;
+    std::vector<double> probabilities;
+    double total_probability = 0;
+    for (pugi::xml_node attribute_node : a_ChoiceNode.children()) {
+        attributes.emplace_back(getAttributeKind(attribute_node, a_Name, a_Required, a_Unique));
+        pugi::xml_attribute probability_attr = attribute_node.attribute("probability");
+        if (probability_attr) {
+            double probability = probability_attr.as_double(-1.0);
+            if (probability < 0.0 || probability > 1.0) {
+                throw std::invalid_argument("Attribute choice probability must be in the range [0,1]");
+            }
+            total_probability += probability;
+            probabilities.emplace_back(probability);
+        } else if (!probabilities.empty()) {
+            throw std::invalid_argument("Probability needs to be specified on all attribute choices or none");
+        }
+    }
+
+    auto count = attributes.size();
+    if (count <= 1) {
+        throw std::invalid_argument("Too few choices are defined in the choice element.");
+    }
+    if (probabilities.empty() || total_probability <= std::numeric_limits<double>::epsilon()) {
+        double uniform_probability = 1.0 / static_cast<double>(count);
+        probabilities.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            probabilities[i] = uniform_probability;
+        }
+        total_probability = 1.0;
+    }
+    const double epsilon = std::numeric_limits<double>::epsilon() * static_cast<double>(count);
+    const double deviation = std::abs(total_probability - 1.0);
+    if (deviation > m_LenientCategoryProbabilityEpsilon) {
+        throw std::invalid_argument("The probabilities of attribute choices need to sum (approximately) to 1");
+    }
+    if (deviation > epsilon) {
+        // Normalize the probabilities.
+        for (auto& probability : probabilities) {
+            probability /= total_probability;
+        }
+        total_probability = 1.0;
+    }
+
+    std::map<double, std::unique_ptr<Attribute>> probabilitiesAttributes;
+    double cumulativeProbability = 0.0;
+    for (size_t i = 0; i < count; ++i) {
+        cumulativeProbability += probabilities[i];
+        probabilitiesAttributes[cumulativeProbability] = std::move(attributes[i]);
+    }
+
+    return std::make_unique<ChoiceAttribute>(a_Name, a_Required, a_Unique, std::move(probabilitiesAttributes), total_probability);
+}
+
+std::unique_ptr<Attribute> Schema::parseAttributeNode(const pugi::xml_node a_AttributeNode) {
+    std::string name = a_AttributeNode.attribute("name").as_string();
+    if (name.empty()) {
+        throw std::invalid_argument("Attribute name cannot be empty");
+    }
+    bool required = a_AttributeNode.attribute("required").as_bool();
+    bool unique = a_AttributeNode.attribute("unique").as_bool();
+    pugi::xml_node kind = a_AttributeNode.first_child();
+    if (kind && !kind.next_sibling()) {
+        return getAttributeKind(kind, name, required, unique);
+    }
+    throw std::invalid_argument("The attribute node must have a single child node.");
+}
+
+std::unique_ptr<Attribute> Schema::getAttributeKind(const pugi::xml_node a_AttributeKindNode, const std::string &a_Name,
+                                                    bool a_Required, bool a_Unique) {
+    const std::string kind = a_AttributeKindNode.name();
+    if (kind.empty()) {
+        throw std::invalid_argument("Attribute kind node name cannot be empty");
+    }
+    if (kind == "date") {
+        return getNumericAttribute(a_AttributeKindNode, true, a_Name, a_Required, a_Unique);
+    }
+    if (kind == "numeric") {
+        return getNumericAttribute(a_AttributeKindNode, false, a_Name, a_Required, a_Unique);
+    }
+    if (kind == "categorical") {
+        std::map<std::string, double> categories = getCategories(a_AttributeKindNode);
+        return std::make_unique<CategoricalAttribute>(a_Name, a_Required, a_Unique, categories);
+    }
+    if (kind == "regex") {
+        std::string regex = a_AttributeKindNode.text().as_string();
+        if (regex.empty()) {
+            throw std::invalid_argument("Attribute regex cannot be empty");
+        }
+        return std::make_unique<RegexAttribute>(a_Name, a_Required, a_Unique, regex);
+    }
+    if (kind == "choice") {
+        return getChoiceAttribute(a_AttributeKindNode, a_Name, a_Required, a_Unique);
+    }
+    throw std::invalid_argument("Attribute must be numeric, categorical, regex, date or choice");
+}
+
+std::pair<std::map<std::string, double>, double> Schema::getCategoriesFromFile(const std::string& a_FileName) {
     std::map<std::string, double> categories;
     double total_probability = 0;
-    size_t count = 0;
-    for (pugi::xml_node category : a_categoriesNode.children("category")) {
+    std::ifstream file(a_FileName);
+    if (!file.is_open()) {
+        throw std::invalid_argument("Cannot open category file.");
+    }
+    std::string line;
+    double probability = 0.0;
+    std::string name;
+    std::smatch match;
+    bool hasMatch;
+    while (std::getline(file, line)) {
+        if (!line.empty()) {
+            hasMatch = false;
+            if (std::regex_match(line, match, m_CSVParseRegex)) {
+                if (match.size() == 4) {
+                    if (match[1].matched) {
+                        name = match[1].str();
+                    } else {
+                        name = match[2].str();
+                    }
+                    try {
+                        probability = std::stod(match[3].str());
+                    } catch (std::logic_error&) {
+                        throw std::invalid_argument("Category probability must be a valid number.");
+                    }
+                    if (probability < 0.0 || probability > 1.0) {
+                        throw std::invalid_argument("Category probability must be in the range [0,1]");
+                    }
+                    total_probability += probability;
+                    hasMatch = true;
+                }
+            }
+            if (!hasMatch) {
+                if (total_probability > 0.0) {
+                    throw std::invalid_argument("Probability needs to be specified on all categories or none");
+                }
+                name = line;
+                probability = 0.0;
+            }
+            if (categories.find(name) != categories.end()) {
+                throw std::invalid_argument("Category defined multiple times");
+            }
+            categories[name] = probability;
+        }
+    }
+    file.close();
+    return make_pair(categories, total_probability);
+}
+
+std::pair<std::map<std::string, double>, double> Schema::getCategoriesFromSchema(const pugi::xml_object_range<pugi::xml_named_node_iterator> a_CategoriesIterator) {
+    std::map<std::string, double> categories;
+    double total_probability = 0;
+    for (pugi::xml_node category : a_CategoriesIterator) {
         double probability = 0.0;
         std::string name = category.text().as_string();
         if (name.empty()) {
@@ -288,19 +497,52 @@ std::map<std::string, double> Schema::getCategories(const pugi::xml_node a_categ
             throw std::invalid_argument("Category defined multiple times");
         }
         categories[name] = probability;
-        ++count;
     }
+    return make_pair(categories, total_probability);
+}
+
+std::map<std::string, double> Schema::getCategories(const pugi::xml_node a_categoriesNode) {
+    std::map<std::string, double> categories;
+    double total_probability = 0;
+    pugi::xml_attribute file_attr = a_categoriesNode.attribute("file");
+    const auto& categoriesIterator = a_categoriesNode.children("category");
+    if (file_attr && categoriesIterator.begin() != categoriesIterator.end()) {
+        throw std::invalid_argument("You cannot specify categories in-schema and also point to a file.");
+    }
+    if (file_attr) {
+        const std::string& fileName = file_attr.as_string();
+        if (fileName.empty()) {
+            throw std::invalid_argument("Category file name cannot be empty.");
+        }
+        auto category_pair = getCategoriesFromFile(fileName);
+        categories = category_pair.first;
+        total_probability = category_pair.second;
+    } else {
+        auto category_pair = getCategoriesFromSchema(categoriesIterator);
+        categories = category_pair.first;
+        total_probability = category_pair.second;
+    }
+    auto count = categories.size();
     if (count == 0) {
-        throw std::invalid_argument("No categories are defined in category element");
+        throw std::invalid_argument("No categories are defined in the category element or file.");
     }
     if (total_probability <= std::numeric_limits<double>::epsilon()) {
         double uniform_probability = 1.0 / static_cast<double>(count);
         for (auto &category : categories) {
             category.second = uniform_probability;
         }
+        total_probability = 1.0;
     }
-    if (std::abs(total_probability - 1.0) > (std::numeric_limits<double>::epsilon() * static_cast<double>(count))) {
-        throw std::invalid_argument("The probabilities of categories need to sum to 1");
+    const double epsilon = std::numeric_limits<double>::epsilon() * static_cast<double>(count);
+    const double deviation = std::abs(total_probability - 1.0);
+    if (deviation > m_LenientCategoryProbabilityEpsilon) {
+        throw std::invalid_argument("The probabilities of categories need to sum (approximately) to 1");
+    }
+    if (deviation > epsilon) {
+        // Normalize the probabilities.
+        for (auto &[key, value] : categories) {
+            value /= total_probability;
+        }
     }
     return categories;
 }
